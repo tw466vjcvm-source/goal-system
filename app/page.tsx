@@ -242,7 +242,11 @@ export default function GoalSystemApp() {
           </div>
         </div>
 
-        <YearVision selectedYear={selectedYear} vision={visions[selectedYear]} />
+        <YearVision
+          key={selectedYear}
+          selectedYear={selectedYear}
+          vision={visions[selectedYear]}
+        />
 
         <MonthGrid months={months} onMonthSelect={setSelectedMonth} />
 
