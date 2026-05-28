@@ -1,5 +1,11 @@
 import { GoalCard } from "@/components/goal-system/goal-card";
-import type { Goal, MonthName, Recommendation, YearValue } from "@/types/goal-system";
+import { ManualGoalForm } from "@/components/goal-system/manual-goal-form";
+import type {
+  Goal,
+  MonthName,
+  Recommendation,
+  YearValue,
+} from "@/types/goal-system";
 
 type MonthGoalsSectionProps = {
   selectedMonth: MonthName;
@@ -10,6 +16,7 @@ type MonthGoalsSectionProps = {
   onToggleCompleted: (goalIndex: number) => void;
   onToggleRecommendations: (goalTitle: string) => void;
   onAddRecommendationAsGoal: (recommendation: Recommendation) => void;
+  onCreateManualGoal: (title: string, duration: string) => void;
 };
 
 export function MonthGoalsSection({
@@ -21,6 +28,7 @@ export function MonthGoalsSection({
   onToggleCompleted,
   onToggleRecommendations,
   onAddRecommendationAsGoal,
+  onCreateManualGoal,
 }: MonthGoalsSectionProps) {
   return (
     <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
@@ -28,9 +36,13 @@ export function MonthGoalsSection({
         {selectedMonth} {selectedYear}
       </h2>
 
-      <p className="text-zinc-400 mb-8">Objetivos conectados con tu visión de {selectedYear}.</p>
+      <p className="text-zinc-400 mb-8">
+        Objetivos conectados con tu visión de {selectedYear}.
+      </p>
 
       <div className="space-y-6">
+        <ManualGoalForm onCreateGoal={onCreateManualGoal} />
+
         {goals.length === 0 && (
           <div className="bg-zinc-800 rounded-2xl p-6 border border-zinc-700">
             <p className="text-zinc-400">No hay objetivos este mes todavía.</p>

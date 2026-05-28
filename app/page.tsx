@@ -171,6 +171,50 @@ export default function GoalSystemApp() {
     });
   }
 
+  function createManualGoal(title: string, duration: string) {
+    if (!selectedMonth) return;
+
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) return;
+
+    const normalizedTitle = trimmedTitle.toLowerCase();
+
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+
+      if (!updatedGoals[selectedYear]) {
+        updatedGoals[selectedYear] = {};
+      }
+
+      if (!updatedGoals[selectedYear]?.[selectedMonth]) {
+        updatedGoals[selectedYear]![selectedMonth] = [];
+      }
+
+      const monthGoalList = updatedGoals[selectedYear]?.[selectedMonth];
+
+      if (!monthGoalList) return currentGoals;
+
+      const alreadyExists = monthGoalList.some(
+        (goal) => goal.title.trim().toLowerCase() === normalizedTitle
+      );
+
+      if (alreadyExists) {
+        return updatedGoals;
+      }
+
+      monthGoalList.push({
+        title: trimmedTitle,
+        progress: 0,
+        completedToday: false,
+        duration,
+        recommendations: [],
+      });
+
+      return updatedGoals;
+    });
+  }
+
   const selectedMonthGoals = selectedMonth
     ? monthGoals[selectedYear]?.[selectedMonth] || []
     : [];
@@ -212,6 +256,7 @@ export default function GoalSystemApp() {
             onToggleCompleted={toggleCompleted}
             onToggleRecommendations={toggleRecommendations}
             onAddRecommendationAsGoal={addRecommendationAsGoal}
+            onCreateManualGoal={createManualGoal}
           />
         )}
 
