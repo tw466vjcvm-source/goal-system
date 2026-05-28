@@ -23,6 +23,7 @@ import type {
 } from "@/types/goal-system";
 
 const MONTH_GOALS_STORAGE_KEY = "goal-system-month-goals";
+const MAX_MINI_MISSIONS_PER_GOAL = 5;
 
 export default function GoalSystemApp() {
   const [selectedYear, setSelectedYear] = React.useState<YearValue>(2026);
@@ -118,6 +119,72 @@ export default function GoalSystemApp() {
       yearGoals[selectedMonth] = monthGoalList.filter(
         (_, index) => index !== goalIndex
       );
+
+      return updatedGoals;
+    });
+  }
+
+  function addMiniMission(goalIndex: number, title: string) {
+    if (!selectedMonth) return;
+
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) return;
+
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
+
+      if (!yearGoals) return currentGoals;
+
+      const monthGoalList = yearGoals[selectedMonth];
+
+      if (!monthGoalList) return currentGoals;
+
+      const goal = monthGoalList[goalIndex];
+
+      if (!goal) return currentGoals;
+
+      const miniMissions = goal.miniMissions || [];
+
+      if (miniMissions.length >= MAX_MINI_MISSIONS_PER_GOAL) {
+        return currentGoals;
+      }
+
+      goal.miniMissions = [
+        ...miniMissions,
+        {
+          title: trimmedTitle,
+          completed: false,
+        },
+      ];
+
+      return updatedGoals;
+    });
+  }
+
+  function toggleMiniMission(goalIndex: number, miniMissionIndex: number) {
+    if (!selectedMonth) return;
+
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
+
+      if (!yearGoals) return currentGoals;
+
+      const monthGoalList = yearGoals[selectedMonth];
+
+      if (!monthGoalList) return currentGoals;
+
+      const goal = monthGoalList[goalIndex];
+
+      if (!goal?.miniMissions) return currentGoals;
+
+      const miniMission = goal.miniMissions[miniMissionIndex];
+
+      if (!miniMission) return currentGoals;
+
+      miniMission.completed = !miniMission.completed;
 
       return updatedGoals;
     });
@@ -257,6 +324,8 @@ export default function GoalSystemApp() {
             onToggleRecommendations={toggleRecommendations}
             onAddRecommendationAsGoal={addRecommendationAsGoal}
             onCreateManualGoal={createManualGoal}
+            onAddMiniMission={addMiniMission}
+            onToggleMiniMission={toggleMiniMission}
           />
         )}
 

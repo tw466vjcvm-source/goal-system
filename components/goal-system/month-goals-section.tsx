@@ -17,6 +17,8 @@ type MonthGoalsSectionProps = {
   onToggleRecommendations: (goalTitle: string) => void;
   onAddRecommendationAsGoal: (recommendation: Recommendation) => void;
   onCreateManualGoal: (title: string, duration: string) => void;
+  onAddMiniMission: (goalIndex: number, title: string) => void;
+  onToggleMiniMission: (goalIndex: number, miniMissionIndex: number) => void;
 };
 
 export function MonthGoalsSection({
@@ -29,6 +31,8 @@ export function MonthGoalsSection({
   onToggleRecommendations,
   onAddRecommendationAsGoal,
   onCreateManualGoal,
+  onAddMiniMission,
+  onToggleMiniMission,
 }: MonthGoalsSectionProps) {
   return (
     <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
@@ -59,6 +63,8 @@ export function MonthGoalsSection({
             onToggleCompleted={onToggleCompleted}
             onToggleRecommendations={onToggleRecommendations}
             onAddRecommendation={onAddRecommendationAsGoal}
+            onAddMiniMission={onAddMiniMission}
+            onToggleMiniMission={onToggleMiniMission}
           />
         ))}
       </div>
