@@ -22,64 +22,105 @@ import type {
   YearValue,
 } from "@/types/goal-system";
 
+const MONTH_GOALS_STORAGE_KEY = "goal-system-month-goals";
+
 export default function GoalSystemApp() {
   const [selectedYear, setSelectedYear] = React.useState<YearValue>(2026);
   const [selectedMonth, setSelectedMonth] = React.useState<MonthName | null>(null);
-  const [monthGoals, setMonthGoals] = React.useState<GoalsByYearAndMonth>(monthGoalsData);
+
+  const [monthGoals, setMonthGoals] =
+    React.useState<GoalsByYearAndMonth>(monthGoalsData);
+
+  const [hasLoadedStorage, setHasLoadedStorage] = React.useState(false);
+
   const [openedRecommendations, setOpenedRecommendations] = React.useState<
     Record<string, boolean>
   >({});
 
+  React.useEffect(() => {
+    try {
+      const savedMonthGoals = localStorage.getItem(MONTH_GOALS_STORAGE_KEY);
+
+      if (savedMonthGoals) {
+        const parsedMonthGoals = JSON.parse(savedMonthGoals) as GoalsByYearAndMonth;
+        setMonthGoals(parsedMonthGoals);
+      }
+    } catch (error) {
+      console.error("Error cargando objetivos desde localStorage:", error);
+    } finally {
+      setHasLoadedStorage(true);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!hasLoadedStorage) return;
+
+    try {
+      localStorage.setItem(
+        MONTH_GOALS_STORAGE_KEY,
+        JSON.stringify(monthGoals)
+      );
+    } catch (error) {
+      console.error("Error guardando objetivos en localStorage:", error);
+    }
+  }, [monthGoals, hasLoadedStorage]);
+
   function toggleCompleted(goalIndex: number) {
     if (!selectedMonth) return;
 
-    const updated = { ...monthGoals };
-    const yearGoals = updated[selectedYear];
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
 
-    if (!yearGoals) return;
+      if (!yearGoals) return currentGoals;
 
-    const monthGoalList = yearGoals[selectedMonth];
+      const monthGoalList = yearGoals[selectedMonth];
 
-    if (!monthGoalList) return;
+      if (!monthGoalList) return currentGoals;
 
-    const goal = monthGoalList[goalIndex];
+      const goal = monthGoalList[goalIndex];
 
-    if (!goal) return;
+      if (!goal) return currentGoals;
 
-    goal.completedToday = !goal.completedToday;
+      goal.completedToday = !goal.completedToday;
 
-    if (goal.completedToday) {
-      goal.progress += 5;
+      if (goal.completedToday) {
+        goal.progress += 5;
 
-      if (goal.progress > 100) {
-        goal.progress = 100;
+        if (goal.progress > 100) {
+          goal.progress = 100;
+        }
+      } else {
+        goal.progress -= 5;
+
+        if (goal.progress < 0) {
+          goal.progress = 0;
+        }
       }
-    } else {
-      goal.progress -= 5;
 
-      if (goal.progress < 0) {
-        goal.progress = 0;
-      }
-    }
-
-    setMonthGoals(updated);
+      return updatedGoals;
+    });
   }
 
   function deleteGoal(goalIndex: number) {
     if (!selectedMonth) return;
 
-    const updated = { ...monthGoals };
-    const yearGoals = updated[selectedYear];
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
 
-    if (!yearGoals) return;
+      if (!yearGoals) return currentGoals;
 
-    const monthGoalList = yearGoals[selectedMonth];
+      const monthGoalList = yearGoals[selectedMonth];
 
-    if (!monthGoalList) return;
+      if (!monthGoalList) return currentGoals;
 
-    monthGoalList.splice(goalIndex, 1);
+      yearGoals[selectedMonth] = monthGoalList.filter(
+        (_, index) => index !== goalIndex
+      );
 
-    setMonthGoals(updated);
+      return updatedGoals;
+    });
   }
 
   function toggleRecommendations(goalTitle: string) {
@@ -92,27 +133,47 @@ export default function GoalSystemApp() {
   function addRecommendationAsGoal(recommendation: Recommendation) {
     if (!selectedMonth) return;
 
-    const updated = { ...monthGoals };
-    const yearGoals = updated[selectedYear];
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
 
-    if (!yearGoals) return;
+      if (!updatedGoals[selectedYear]) {
+        updatedGoals[selectedYear] = {};
+      }
 
-    const monthGoalList = yearGoals[selectedMonth];
+      if (!updatedGoals[selectedYear]?.[selectedMonth]) {
+        updatedGoals[selectedYear]![selectedMonth] = [];
+      }
 
-    if (!monthGoalList) return;
+      const monthGoalList = updatedGoals[selectedYear]?.[selectedMonth];
 
-    monthGoalList.push({
-      title: recommendation.title,
-      progress: 0,
-      completedToday: false,
-      duration: recommendation.type === "Hábito de vida" ? "Objetivo permanente" : "30 días",
-      recommendations: [],
+      if (!monthGoalList) return currentGoals;
+
+      const alreadyExists = monthGoalList.some(
+        (goal) => goal.title === recommendation.title
+      );
+
+      if (alreadyExists) {
+        return updatedGoals;
+      }
+
+      monthGoalList.push({
+        title: recommendation.title,
+        progress: 0,
+        completedToday: false,
+        duration:
+          recommendation.type === "Hábito de vida"
+            ? "Objetivo permanente"
+            : "30 días",
+        recommendations: [],
+      });
+
+      return updatedGoals;
     });
-
-    setMonthGoals(updated);
   }
 
-  const selectedMonthGoals = selectedMonth ? monthGoals[selectedYear]?.[selectedMonth] || [] : [];
+  const selectedMonthGoals = selectedMonth
+    ? monthGoals[selectedYear]?.[selectedMonth] || []
+    : [];
 
   return (
     <div className="min-h-screen bg-black text-white p-6 font-sans">
@@ -120,7 +181,9 @@ export default function GoalSystemApp() {
         <div className="bg-zinc-900 rounded-3xl p-8 border border-zinc-800">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-5xl font-bold mb-3">Sistema de Objetivos 🚀</h1>
+              <h1 className="text-5xl font-bold mb-3">
+                Sistema de Objetivos 🚀
+              </h1>
 
               <p className="text-zinc-400 text-lg max-w-3xl">
                 Construye tu vida paso a paso con hábitos, disciplina y visión.
