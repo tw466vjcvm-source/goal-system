@@ -92,7 +92,7 @@ export function GoalCard({
             <h4 className="text-lg font-bold">Mini misiones</h4>
 
             <p className="text-sm text-zinc-500">
-              Pasos pequeños para avanzar este objetivo.
+              Pasos sugeridos para avanzar este objetivo.
             </p>
           </div>
 
@@ -143,8 +143,8 @@ export function GoalCard({
         {miniMissions.length === 0 && (
           <div className="mb-4 rounded-xl border border-dashed border-zinc-700 bg-black/20 px-4 py-3">
             <p className="text-sm text-zinc-500">
-              Agrega entre 2 y 5 pasos concretos para hacer este objetivo más
-              accionable.
+              Los objetivos nuevos reciben sugerencias automáticas. También
+              puedes agregar pasos manuales aquí.
             </p>
           </div>
         )}
