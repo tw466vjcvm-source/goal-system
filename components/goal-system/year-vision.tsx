@@ -58,6 +58,7 @@ export function YearVision({ selectedYear, vision }: YearVisionProps) {
   const [answersByYear, setAnswersByYear] =
     React.useState<AnnualVisionAnswersByYear>({});
   const [isQuizOpen, setIsQuizOpen] = React.useState(false);
+  const visionHeading = `Visión ${selectedYear}`;
 
   React.useEffect(() => {
     try {
@@ -121,7 +122,7 @@ export function YearVision({ selectedYear, vision }: YearVisionProps) {
             </p>
 
             <h2 className="text-4xl font-bold md:text-5xl">
-              Visión {selectedYear}
+              {visionHeading}
             </h2>
 
             <p className="mt-4 text-lg text-zinc-400">
