@@ -17,12 +17,86 @@ import {
 } from "@/data/goal-system-data";
 import type {
   GoalsByYearAndMonth,
+  MiniMission,
   MonthName,
   Recommendation,
   YearValue,
 } from "@/types/goal-system";
 
 const MONTH_GOALS_STORAGE_KEY = "goal-system-month-goals";
+const MAX_MINI_MISSIONS_PER_GOAL = 5;
+
+const fallbackMiniMissionTitles = [
+  "Definir el primer paso concreto",
+  "Bloquear tiempo en la semana",
+  "Revisar avance semanal",
+  "Eliminar una distracción",
+  "Mantener constancia",
+];
+
+const miniMissionSuggestionRules = [
+  {
+    keywords: ["entren", "gym", "gimnasio", "ejercicio", "pesas"],
+    titles: [
+      "Definir los días exactos de entrenamiento",
+      "Preparar la ropa del gimnasio",
+      "Registrar ejercicios, pesos o repeticiones",
+      "Dormir bien para recuperarme",
+      "Mantener una alimentación base",
+    ],
+  },
+  {
+    keywords: ["dorm", "sueno", "descans"],
+    titles: [
+      "Definir una hora fija para acostarme",
+      "Dejar pantallas 30 minutos antes",
+      "Preparar la pieza para dormir",
+      "Evitar cafeína tarde",
+      "Mantener constancia toda la semana",
+    ],
+  },
+  {
+    keywords: ["estudi", "prueba", "examen", "certamen"],
+    titles: [
+      "Bloquear tiempo de estudio",
+      "Hacer preguntas de práctica",
+      "Repasar errores",
+      "Eliminar distracciones",
+      "Hacer un resumen corto",
+    ],
+  },
+  {
+    keywords: ["negocio", "ventas", "dinero", "ingreso", "online", "cliente"],
+    titles: [
+      "Aprender una habilidad clave",
+      "Practicar ventas",
+      "Crear una oferta simple",
+      "Medir avance semanal",
+      "Contactar posibles clientes o usuarios",
+    ],
+  },
+];
+
+function normalizeGoalTitle(title: string) {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function createMiniMissionsForGoal(title: string): MiniMission[] {
+  const normalizedTitle = normalizeGoalTitle(title);
+  const matchingRule = miniMissionSuggestionRules.find((rule) =>
+    rule.keywords.some((keyword) => normalizedTitle.includes(keyword))
+  );
+
+  const suggestedTitles = matchingRule?.titles || fallbackMiniMissionTitles;
+
+  return suggestedTitles.slice(0, MAX_MINI_MISSIONS_PER_GOAL).map((missionTitle) => ({
+    title: missionTitle,
+    completed: false,
+  }));
+}
 
 export default function GoalSystemApp() {
   const [selectedYear, setSelectedYear] = React.useState<YearValue>(2026);
@@ -123,6 +197,72 @@ export default function GoalSystemApp() {
     });
   }
 
+  function addMiniMission(goalIndex: number, title: string) {
+    if (!selectedMonth) return;
+
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) return;
+
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
+
+      if (!yearGoals) return currentGoals;
+
+      const monthGoalList = yearGoals[selectedMonth];
+
+      if (!monthGoalList) return currentGoals;
+
+      const goal = monthGoalList[goalIndex];
+
+      if (!goal) return currentGoals;
+
+      const miniMissions = goal.miniMissions || [];
+
+      if (miniMissions.length >= MAX_MINI_MISSIONS_PER_GOAL) {
+        return currentGoals;
+      }
+
+      goal.miniMissions = [
+        ...miniMissions,
+        {
+          title: trimmedTitle,
+          completed: false,
+        },
+      ];
+
+      return updatedGoals;
+    });
+  }
+
+  function toggleMiniMission(goalIndex: number, miniMissionIndex: number) {
+    if (!selectedMonth) return;
+
+    setMonthGoals((currentGoals) => {
+      const updatedGoals = structuredClone(currentGoals);
+      const yearGoals = updatedGoals[selectedYear];
+
+      if (!yearGoals) return currentGoals;
+
+      const monthGoalList = yearGoals[selectedMonth];
+
+      if (!monthGoalList) return currentGoals;
+
+      const goal = monthGoalList[goalIndex];
+
+      if (!goal?.miniMissions) return currentGoals;
+
+      const miniMission = goal.miniMissions[miniMissionIndex];
+
+      if (!miniMission) return currentGoals;
+
+      miniMission.completed = !miniMission.completed;
+
+      return updatedGoals;
+    });
+  }
+
   function toggleRecommendations(goalTitle: string) {
     setOpenedRecommendations((prev) => ({
       ...prev,
@@ -165,6 +305,7 @@ export default function GoalSystemApp() {
             ? "Objetivo permanente"
             : "30 días",
         recommendations: [],
+        miniMissions: createMiniMissionsForGoal(recommendation.title),
       });
 
       return updatedGoals;
@@ -209,6 +350,7 @@ export default function GoalSystemApp() {
         completedToday: false,
         duration,
         recommendations: [],
+        miniMissions: createMiniMissionsForGoal(trimmedTitle),
       });
 
       return updatedGoals;
@@ -242,7 +384,11 @@ export default function GoalSystemApp() {
           </div>
         </div>
 
-        <YearVision selectedYear={selectedYear} vision={visions[selectedYear]} />
+        <YearVision
+          key={selectedYear}
+          selectedYear={selectedYear}
+          vision={visions[selectedYear]}
+        />
 
         <MonthGrid months={months} onMonthSelect={setSelectedMonth} />
 
@@ -257,6 +403,8 @@ export default function GoalSystemApp() {
             onToggleRecommendations={toggleRecommendations}
             onAddRecommendationAsGoal={addRecommendationAsGoal}
             onCreateManualGoal={createManualGoal}
+            onAddMiniMission={addMiniMission}
+            onToggleMiniMission={toggleMiniMission}
           />
         )}
 

@@ -27,12 +27,18 @@ export type Recommendation = {
   science: string;
 };
 
+export type MiniMission = {
+  title: string;
+  completed: boolean;
+};
+
 export type Goal = {
   title: string;
   progress: number;
   completedToday: boolean;
   duration: string;
   recommendations: Recommendation[];
+  miniMissions?: MiniMission[];
 };
 
 export type CompletedGoal = {
